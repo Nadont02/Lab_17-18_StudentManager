@@ -65,6 +65,58 @@ public partial class MainWindow : Window
 
     private void Delete_Click(object sender, RoutedEventArgs e)
     {
-        
+        if (DataGridPeople.SelectedItem is not DataRowView row)
+        {
+            MessageBox.Show(
+                "Выберите запись для удаления",
+                "Внимание",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+            return;
+        }
+        long idLong;
+        try
+        {
+            idLong = Convert.ToInt64(row["ID"]);
+        }
+        catch
+        {
+            MessageBox.Show(
+                "Не удалось прочитать ID выбранной записи.",
+                "Ошибка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
+        var answer = MessageBox.Show(
+            $"Удалить запись с ID = {idLong}?",
+            "Подтвердите удаление",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes) return;
+        try
+        {
+            using var connection = new SqliteConnection(ConnectionString);
+            connection.Open();
+            using var command = new SqliteCommand("DELETE FROM Students WHERE ID = $id;", connection);
+            command.Parameters.AddWithValue("$id", idLong);
+            var affected = command.ExecuteNonQuery();
+            if (affected == 0)
+            {
+                MessageBox.Show(
+                    "Ничего не удалено(нема записи).",
+                    "Информация",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            LoadData();
+        }
+        catch (Exception ex) {
+            MessageBox.Show(
+                $"Ошибка при удалении: {ex.Message}",
+                "Ошибка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 }
